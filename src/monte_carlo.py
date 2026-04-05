@@ -106,6 +106,23 @@ def compute_abs_error(solver, t0, x0, N, n_paths, seed=None):
 
     return abs(mc_value - true_value)
 
+def print_mc_sample_table(rows):
+    """
+    Print a Monte Carlo sample-size table in terminal only.
+
+    Each row should contain:
+    [n_paths, mc_value, abs_error]
+    """
+    print("\nExercise 1.2 Monte Carlo sample-size table")
+    print(f"{'MC Samples':>12} {'MC Value':>15} {'Absolute Error':>18}")
+
+    for row in rows:
+        n_paths = int(row[0])
+        mc_value = row[1]
+        abs_error = row[2]
+
+        print(f"{n_paths:12d} {mc_value:15.6f} {abs_error:18.6e}")
+
 
 def build_test_solver():
     """
@@ -201,6 +218,41 @@ def time_step_convergence_test(save_path="figures/mc_time_convergence.png", show
 
     print(f"Saved figure to: {save_path}")
 
+def sample_convergence_table():
+    """
+    Print a table for Monte Carlo sample-size convergence:
+    MC Samples | MC Value | Absolute Error
+    """
+    solver = build_test_solver()
+
+    t0 = 0.0
+    x0 = np.array([1.0, 0.5])
+
+    N = 5000
+    n_paths_list = [10, 20, 40, 80, 150, 300, 600, 1200, 2500, 5000, 10000, 20000, 40000, 60000, 80000, 100000]
+
+    true_value = solver.value_function(
+        torch.tensor([t0], dtype=torch.float32),
+        torch.tensor(x0[None, None, :], dtype=torch.float32)
+    ).item()
+
+    rows = []
+
+    for n_paths in n_paths_list:
+        mc_value = simulate_cost_explicit(
+            solver=solver,
+            t0=t0,
+            x0=x0,
+            N=N,
+            n_paths=n_paths,
+            seed=123
+        )
+
+        abs_error = abs(mc_value - true_value)
+        rows.append([n_paths, mc_value, abs_error])
+
+    print_mc_sample_table(rows)
+
 
 def sample_convergence_test(save_path="figures/mc_sample_convergence.png", show_plot=True):
     """
@@ -263,3 +315,4 @@ def run_all_mc_experiments(show_plots=True):
 
 if __name__ == "__main__":
     run_all_mc_experiments(show_plots=True)
+    sample_convergence_table()

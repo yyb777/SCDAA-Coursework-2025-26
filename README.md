@@ -40,10 +40,27 @@ python src/monte_carlo.py
 
 This will:
 
+This will:
+
 run a basic Monte Carlo test
 generate and save the following figures:
 figures/mc_time_convergence.png
 figures/mc_sample_convergence.png
+print convergence results in the terminal for:
+time-step discretisation
+Monte Carlo sample-size convergence
+
+Current setup:
+
+the error is defined as the absolute difference between the Monte Carlo estimate and the benchmark value from Exercise 1.1
+the time-step convergence test varies N
+the sample-size convergence test varies the number of Monte Carlo paths n_paths
+
+Typical terminal output includes:
+
+N = ..., abs error = ...
+n_paths = ..., abs error = ...
+
 Exercise 2.1
 
 Run:
@@ -59,16 +76,50 @@ figures/ex2_2_control_loss.png
 
 Current setup:
 
-input dimension = 3 for (t, x1, x2)
-output dimension = 2 for the control
-network = 2 hidden layers, width 100
-optimizer = Adam
-Notes
+terminal time: T = 1
+training samples:
+t ~ Uniform([0, 1])
+x ~ Uniform([-3, 3] x [-3, 3])
+network type: NetDGM-style model
+hidden size: 100
+optimizer: Adam
+loss: mean squared error (MSE)
 
-This README will be updated as more exercises are completed.
+Exercise 2.2
 
+Run:
+python src/networks.py
 
-### Exercise 3.1
+This will also:
+
+sample training data from the benchmark optimal control in Exercise 1.1
+train a feedforward neural network for the optimal Markov control
+save the training loss figure:
+figures/ex2_2_control_loss.png
+
+Current setup:
+
+input dimension: 3 for (t, x1, x2)
+output dimension: 2 for the control
+network type: feedforward neural network
+architecture: 2 hidden layers, width 100
+optimizer: Adam
+loss: mean squared error (MSE)
+Exercise 2 terminal outputs
+
+In addition to the saved figures, the script also prints the following in the terminal:
+
+a training metrics table at 500-epoch intervals:
+Epoch
+Value Loss
+Control Loss
+a small test MSE summary for both networks:
+Value network test MSE
+Control network test MSE
+
+This is used to check that the trained networks not only reduce training loss, but also approximate the benchmark value function and optimal control on newly sampled test points.
+
+Exercise 3.1
 Run:
 ```bash
 python src/dgm.py
@@ -76,13 +127,6 @@ python src/dgm.py
 This will:
 
 train a DGM-style neural network to solve the linear PDE under the fixed control 
-𝛼
-=
-(
-1
-,
-1
-)
 α=(1,1)
 save the DGM training loss figure:
 figures/ex3_1_dgm_loss.png

@@ -115,6 +115,7 @@ def train_value_network(
     loss_fn = nn.MSELoss()
 
     loss_history = []
+    value_metrics = []   # [epoch, value_loss]
 
     for step in range(1, n_steps + 1):
         t_batch, x_batch, y_batch = sample_value_data(solver, batch_size)
@@ -131,12 +132,16 @@ def train_value_network(
         if step % 200 == 0:
             print(f"step = {step:5d}, loss = {loss.item():.8f}")
 
+        if step % 500 == 0:
+            value_metrics.append([step, loss.item()])
+
     plt.figure(figsize=(8, 5))
     plt.semilogy(loss_history, linewidth=1.5, label="Value Function Loss (MSE)")
     plt.xlabel("Epochs")
     plt.ylabel("MSE Loss (Log Scale)")
     plt.title("Exercise 2.1: Training Loss for Value Function (NetDGM)")
     plt.grid(True, which="both", ls="--", alpha=0.6)
+    plt.legend()
     plt.tight_layout()
     plt.savefig(save_path, dpi=200)
 
@@ -147,7 +152,7 @@ def train_value_network(
 
     print(f"Saved figure to: {save_path}")
 
-    return model, loss_history
+    return model, loss_history, value_metrics
 
 class FFNControl(nn.Module):
     """
@@ -221,11 +226,12 @@ def train_control_network(
     loss_fn = nn.MSELoss()
 
     loss_history = []
+    control_metrics = []   # [epoch, control_loss]
 
     for step in range(1, n_steps + 1):
         t_batch, x_batch, y_batch = sample_control_data(solver, batch_size)
 
-        pred = model(t_batch, x_batch)     # (batch, 2)
+        pred = model(t_batch, x_batch)
         loss = loss_fn(pred, y_batch)
 
         optimizer.zero_grad()
@@ -237,12 +243,16 @@ def train_control_network(
         if step % 200 == 0:
             print(f"[control] step = {step:5d}, loss = {loss.item():.8f}")
 
+        if step % 500 == 0:
+            control_metrics.append([step, loss.item()])
+
     plt.figure(figsize=(8, 5))
     plt.semilogy(loss_history, linewidth=1.5, label="Control Loss (MSE)")
     plt.xlabel("Epochs")
     plt.ylabel("MSE Loss (Log Scale)")
     plt.title("Exercise 2.2: Training Loss for Markov Control (FFN)")
     plt.grid(True, which="both", ls="--", alpha=0.6)
+    plt.legend()
     plt.tight_layout()
     plt.savefig(save_path, dpi=200)
 
@@ -253,11 +263,60 @@ def train_control_network(
 
     print(f"Saved figure to: {save_path}")
 
-    return model, loss_history
+    return model, loss_history, control_metrics
 
+def print_ex2_metrics_table(metrics_rows):
+    """
+    Print Exercise 2 metrics table in terminal only.
+
+    Each row should be:
+    [epoch, value_loss, control_loss]
+    """
+    print("\nExercise 2 metrics table")
+    print(f"{'Epoch':>8} {'Value Loss':>15} {'Control Loss':>15}")
+
+    for row in metrics_rows:
+        epoch = int(row[0])
+        value_loss = row[1]
+        control_loss = row[2]
+
+        print(
+            f"{epoch:8d} "
+            f"{value_loss:15.6e} "
+            f"{control_loss:15.6e}"
+        )
+
+def evaluate_value_test_mse(model, solver, n_test=2000):
+    """
+    Evaluate test MSE for the value network on freshly sampled points.
+    """
+    model.eval()
+    loss_fn = nn.MSELoss()
+
+    with torch.no_grad():
+        t_test, x_test, y_test = sample_value_data(solver, n_test)
+        pred_test = model(t_test, x_test)
+        test_mse = loss_fn(pred_test, y_test).item()
+
+    return test_mse
+
+
+def evaluate_control_test_mse(model, solver, n_test=2000):
+    """
+    Evaluate test MSE for the control network on freshly sampled points.
+    """
+    model.eval()
+    loss_fn = nn.MSELoss()
+
+    with torch.no_grad():
+        t_test, x_test, y_test = sample_control_data(solver, n_test)
+        pred_test = model(t_test, x_test)
+        test_mse = loss_fn(pred_test, y_test).item()
+
+    return test_mse
 
 if __name__ == "__main__":
-    train_value_network(
+    value_model, value_loss_history, value_metrics = train_value_network(
         save_path="figures/ex2_1_value_loss.png",
         n_steps=3000,
         batch_size=512,
@@ -266,7 +325,7 @@ if __name__ == "__main__":
         show_plot=True
     )
 
-    train_control_network(
+    control_model, control_loss_history, control_metrics = train_control_network(
         save_path="figures/ex2_2_control_loss.png",
         n_steps=3000,
         batch_size=512,
@@ -275,5 +334,25 @@ if __name__ == "__main__":
         show_plot=True
     )
 
+    # merge the two metric lists by epoch
+    metrics_rows = []
+    n_rows = min(len(value_metrics), len(control_metrics))
 
-# %%
+    for i in range(n_rows):
+        epoch_v, loss_v = value_metrics[i]
+        epoch_c, loss_c = control_metrics[i]
+
+        if epoch_v == epoch_c:
+            metrics_rows.append([epoch_v, loss_v, loss_c])
+
+    print_ex2_metrics_table(metrics_rows)
+
+    # small test MSE evaluation
+    solver = build_test_solver()
+
+    value_test_mse = evaluate_value_test_mse(value_model, solver, n_test=2000)
+    control_test_mse = evaluate_control_test_mse(control_model, solver, n_test=2000)
+
+    print("\nExercise 2 test MSE")
+    print(f"Value network test MSE   = {value_test_mse:.6e}")
+    print(f"Control network test MSE = {control_test_mse:.6e}")
