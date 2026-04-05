@@ -66,3 +66,43 @@ optimizer = Adam
 Notes
 
 This README will be updated as more exercises are completed.
+
+
+### Exercise 3.1
+Run:
+```bash
+python src/dgm.py
+
+This will:
+
+train a DGM-style neural network to solve the linear PDE under the fixed control 
+𝛼
+=
+(
+1
+,
+1
+)
+α=(1,1)
+save the DGM training loss figure:
+figures/ex3_1_dgm_loss.png
+evaluate the trained DGM solution against a Monte Carlo benchmark during training
+save the relative error figure:
+figures/ex3_1_dgm_mc_error.png
+print a metrics table in the terminal containing:
+epoch
+total loss
+PDE residual
+boundary residual
+relative error against Monte Carlo
+
+Current setup:
+fixed control: α=(1,1)
+terminal time: T = 1
+interior samples:
+t ~ Uniform([0, 1])
+x ~ Uniform([-3, 3] x [-3, 3])
+network: NetDGM-style model with hidden size 100
+optimizer: Adam
+training loss = PDE residual loss + terminal boundary loss
+Monte Carlo comparison is evaluated at a fixed test point during training
