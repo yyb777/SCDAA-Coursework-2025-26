@@ -166,3 +166,51 @@ class LQRSolver:
         A = -torch.matmul(D_inv, M_T)
         a = torch.matmul(A.unsqueeze(0), Sx).squeeze(-1)
         return a
+    
+def basic_test():
+    H = np.array([[0.1, 0.0],
+                  [0.0, 0.2]])
+    M = np.eye(2)
+    C = np.eye(2)
+    D = np.eye(2)
+    R = np.eye(2)
+    sigma = 0.3 * np.eye(2)
+    T = 1.0
+
+    solver = LQRSolver(H, M, C, D, R, sigma, T)
+
+    time_grid = np.linspace(0.0, T, 201)
+    solver.solve_riccati(time_grid)
+
+    t_batch = torch.tensor([0.0, 0.5, 1.0], dtype=torch.float32)
+    x_batch = torch.tensor([
+        [[1.0, 0.0]],
+        [[1.0, 2.0]],
+        [[0.5, -1.0]]
+    ], dtype=torch.float32)
+
+    v = solver.value_function(t_batch, x_batch)
+    a = solver.optimal_control(t_batch, x_batch)
+
+    print("S_grid shape:", solver.S_grid.shape)
+    print("S(T):")
+    print(solver.S_grid[-1])
+
+    print("v shape:", v.shape)
+    print("v =", v)
+
+    print("a shape:", a.shape)
+    print("a =", a)
+
+    xT = torch.tensor([[[0.5, -1.0]]], dtype=torch.float32)
+    tT = torch.tensor([1.0], dtype=torch.float32)
+
+    vT = solver.value_function(tT, xT)
+    true_vT = torch.tensor([[0.5**2 + (-1.0)**2]], dtype=torch.float32)
+
+    print("v(T, x) =", vT)
+    print("x^T R x =", true_vT)
+
+
+if __name__ == "__main__":
+    basic_test()
