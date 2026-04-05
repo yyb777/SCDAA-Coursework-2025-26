@@ -149,6 +149,112 @@ def train_value_network(
 
     return model, loss_history
 
+class FFNControl(nn.Module):
+    """
+    Feedforward neural network for Exercise 2.2.
+
+    Input:  (t, x1, x2) -> dimension 3
+    Output: control a(t, x) -> dimension 2
+
+    Required by the coursework:
+    - 2 hidden layers
+    - hidden size 100
+    """
+    def __init__(self, input_dim=3, hidden_dim=100, output_dim=2):
+        super().__init__()
+
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc_out = nn.Linear(hidden_dim, output_dim)
+
+        self.activation = nn.Tanh()
+
+    def forward(self, t, x):
+        """
+        t: tensor of shape (batch, 1)
+        x: tensor of shape (batch, 2)
+        """
+        z = torch.cat([t, x], dim=1)   # (batch, 3)
+
+        h = self.activation(self.fc1(z))
+        h = self.activation(self.fc2(h))
+        out = self.fc_out(h)           # (batch, 2)
+
+        return out
+
+
+def sample_control_data(solver, batch_size):
+    """
+    Sample training data for Exercise 2.2:
+      t ~ Uniform([0,T])
+      x ~ Uniform([-3,3]^2)
+      y = a(t, x)
+    """
+    T = solver.T
+
+    t = torch.rand(batch_size, 1, dtype=torch.float32) * T
+    x = -3.0 + 6.0 * torch.rand(batch_size, 2, dtype=torch.float32)
+
+    y = solver.optimal_control(
+        t.squeeze(1),
+        x.unsqueeze(1)
+    ).detach()
+
+    return t, x, y
+
+
+def train_control_network(
+    save_path="figures/ex2_2_control_loss.png",
+    n_steps=3000,
+    batch_size=512,
+    lr=1e-3,
+    hidden_dim=100,
+    show_plot=True
+):
+    """
+    Train a 2-hidden-layer FFN to approximate the optimal control a(t, x).
+    """
+    solver = build_test_solver()
+    model = FFNControl(input_dim=3, hidden_dim=hidden_dim, output_dim=2)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.MSELoss()
+
+    loss_history = []
+
+    for step in range(1, n_steps + 1):
+        t_batch, x_batch, y_batch = sample_control_data(solver, batch_size)
+
+        pred = model(t_batch, x_batch)     # (batch, 2)
+        loss = loss_fn(pred, y_batch)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        loss_history.append(loss.item())
+
+        if step % 200 == 0:
+            print(f"[control] step = {step:5d}, loss = {loss.item():.8f}")
+
+    plt.figure(figsize=(8, 5))
+    plt.semilogy(loss_history, linewidth=1.5, label="Control Loss (MSE)")
+    plt.xlabel("Epochs")
+    plt.ylabel("MSE Loss (Log Scale)")
+    plt.title("Exercise 2.2: Training Loss for Markov Control (FFN)")
+    plt.grid(True, which="both", ls="--", alpha=0.6)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=200)
+
+    if show_plot:
+        plt.show()
+    else:
+        plt.close()
+
+    print(f"Saved figure to: {save_path}")
+
+    return model, loss_history
+
 
 if __name__ == "__main__":
     train_value_network(
@@ -160,6 +266,14 @@ if __name__ == "__main__":
         show_plot=True
     )
 
+    train_control_network(
+        save_path="figures/ex2_2_control_loss.png",
+        n_steps=3000,
+        batch_size=512,
+        lr=1e-3,
+        hidden_dim=100,
+        show_plot=True
+    )
 
 
 # %%
