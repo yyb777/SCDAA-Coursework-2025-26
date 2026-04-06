@@ -8,7 +8,7 @@ This is the online git repository submitted for the coursework.
 ## Group members
 - Name: Yibo Yuan, Student Number: s2858984, Contribution: 33.33%
 - Name: Qichang Li, Student Number: s2797422, Contribution: 33.33%
-- Name: Shaoyuan Yang, Student Number: 2889053, Contribution: 33.34%
+- Name: Shaoyuan Yang, Student Number: s2889053, Contribution: 33.34%
 
 ## Requirements
 This coursework uses only:
@@ -17,7 +17,6 @@ This coursework uses only:
 - `matplotlib`
 - `torch`
 
-Please make sure these libraries are installed in your Python environment.
 
 ## Repository structure
 - `src/lqr_solver.py`: solver for Exercise 1.1
@@ -29,7 +28,35 @@ Please make sure these libraries are installed in your Python environment.
 
 ## Reproducing the current outputs
 
-Before running the scripts below, make sure the folder `figures/` exists in the repository root.
+To make it easier to save all generated figures, please create a folder named `figures` in the repository root before running the scripts.
+
+After running all code, the repository structure should look approximately like this:
+
+```text
+repository_root/
+├── README.md
+├── src/
+│   ├── lqr_solver.py
+│   ├── monte_carlo.py
+│   ├── networks.py
+│   ├── dgm.py
+│   └── policy_iteration.py
+├── figures/
+│   ├── mc_time_convergence.png
+│   ├── mc_sample_convergence.png
+│   ├── ex2_1_value_loss.png
+│   ├── ex2_2_control_loss.png
+│   ├── ex3_1_dgm_loss.png
+│   ├── ex3_1_dgm_error.png
+│   ├── ex4_1_policy_value_loss.png
+│   └── ex4_1_policy_action_loss.png
+└── ...
+```
+You can create the folder with:
+```bash
+mkdir -p figures
+```
+
 
 ### Exercise 1.1
 Run:
@@ -205,6 +232,7 @@ Current setup:
 
 ### Notes
 
-- The repository is being updated step by step as each exercise is completed.
+- The numerical tables are printed in the terminal when the scripts are run, and they are formatted as tables in the PDF report for easier reading.
 - The latest commit before the deadline should be used for assessment.
 - All figures and terminal tables referenced in the report should be reproducible using the commands above.
+- If any problems occur during the execution of the code, please contact any member of the team.
